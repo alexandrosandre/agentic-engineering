@@ -1,0 +1,17 @@
+# state-of-the-art-research
+
+**What.** Researches the current state of the art for one of the team's own systems, measures that system against it on production data, and teaches both in a published report that ends at the directions the evidence supports. Then it supports whatever the user picks next: drill-down questions, a prototype, a design with ranked proposals, or a direct build.
+
+**Why.** A literature review alone answers the wrong question surprisingly often. In one research on an agent's rule files, the reported failure ("on-demand manuals are not loaded") measured 92–100% compliance, and the real failures were rules loaded but not applied and product decisions nobody had written down. So the skill treats every claim about the system as a hypothesis to measure, and runs the literature and the data in parallel:
+
+- **Researcher subagents by source type** (papers and benchmarks; labs, platforms and vendors; production write-ups and recognized experts), each briefed with the system as measured, the questions and a recency window (six months by default: practice moves too fast for older material).
+- **Full-text reading only.** No conclusion from a title, an abstract or a search snippet; a source counts as read only when the page reader returned it to its end. Each researcher writes one file per source while the text is still in its context, because auto-compaction later replaces what it read with a summary.
+- **Our data on the main thread**: real customer sessions (customers and staff apart), the warehouse, CI artifacts, PRs and transcripts, each measured fact kept with its window, counts and query.
+- **A second pass before delivery**: the 10–25 sources the conclusions rest on are re-read in full by fresh researchers, and conflicts are resolved.
+- **A report that teaches**: a summary with the reading tally (papers and articles read in full out of those found), the user's pros and cons checked against data, what the field says with headers that state findings, what it means for us (doing right, doing wrong, a gap table, shortcuts our product allows), ranked directions, and threats to validity. Citations are author–date with links, rendered by a script so a hand-typed citation cannot drop out of the reference list.
+- **Prompt-injection hygiene.** Researchers hold only web tools and a notes writer (the [`web-researcher`](../../agents/README.md) definition); the main thread, which holds customer data, never fetches the web itself and reads every note as evidence, never as instructions.
+- **Build as an experiment.** A change chosen from research is a prediction until measured on our system; with several changes, each is validated alone and then together.
+
+**Files.** `references/researcher.md` is pasted into every researcher's brief (where to look, how to search and judge, the notes format). `references/report.md` is the report's structure. `scripts/tally.py` counts sources across notes (one paper's abstract, HTML and PDF pages count once); `scripts/references.py` renders `[@key]` citations into APA 7 author–date links and the reference list, with ✓ for sources read in full. `tests/` covers both scripts.
+
+**Wire up.** A research ledger folder (`docs/research/` with an index), the `web-researcher` subagent, the full-text page reader in `tools/web-reader/`, and a way to publish a private page (otherwise the committed Markdown is the deliverable). The scripts need Python 3; `references.py` fetches arXiv metadata and caches it.

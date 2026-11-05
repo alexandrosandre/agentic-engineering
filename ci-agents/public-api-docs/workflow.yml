@@ -1,0 +1,85 @@
+# Install as .github/workflows/public-api-docs.yml.
+name: Public API Doc Sync
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+    branches:
+      - master
+      - "release/*"
+    paths:
+      - "api/public_api_swagger.yaml"
+      - "api/public_handlers.py"
+      - "api/**/public_*.py"
+      - "api/tests/test_public_api.py"
+
+jobs:
+  doc-sync:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      # A sticky PR comment, so reruns edit one comment instead of adding more. A mid-tier model is
+      # enough.
+      - name: Run Public API Doc Sync
+        uses: anthropics/claude-code-action@d535f5172dec02b204866b393d6b20b9b2aaf98d # v1.0.266
+        with:
+          # The original picks this token from a pool of accounts' secrets (a repository variable
+          # names them); see autoreview's references/HEURISTICS.md.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          use_sticky_comment: true
+          # `--strict-mcp-config` keeps the servers in the .mcp.json the action restores from the
+          # base branch from starting: the action approves every project server, and their commands
+          # are repository paths, so they would run the PR's own files with this job's tokens. The
+          # action passes its GitHub servers with --mcp-config, which the flag keeps.
+          claude_args: |
+            --model claude-sonnet-5
+            --allowedTools "Read,Write,Edit,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
+            --strict-mcp-config
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Repository context:
+            - Public API handlers: api/public_handlers.py
+            - Public API swagger: api/public_api_swagger.yaml
+            - Public API regression test: api/tests/test_public_api.py
+            - The PR branch is already checked out.
+
+            This PR may change the company's public API. Review the diff to determine
+            whether the public API interface changed (endpoints, parameters, auth,
+            request/response schema, status codes, examples, or versioned behavior).
+
+            If the public API interface changed:
+            1. Update api/public_api_swagger.yaml to match.
+               - Keep it consistent with the implementation and tests.
+            2. Automatically bump the version in info.version based on the nature of changes:
+               - MAJOR version when you make incompatible API changes.
+               - MINOR version when you add functionality in a backward compatible manner.
+               - PATCH version when you make backward compatible bug fixes.
+            3. Commit the updated swagger file to the PR branch.
+            4. Post a PR comment with any required manual steps (if any).
+            If the public API did NOT change:
+            - Do not modify files.
+            - Do not post any comment.
+
+            Expected output:
+            - Only update api/public_api_swagger.yaml when needed.
+            - Use a single PR comment for the result and instructions.
+            - Only post GitHub comments.
+            - If API changes are detected, list the changed endpoints/schemas
+              in the PR comment before the publishing instructions.
+
+            Success criteria:
+            - Swagger file matches public API changes when present.
+            - No unnecessary changes or commits.
+            - If no API change, no comment is posted.

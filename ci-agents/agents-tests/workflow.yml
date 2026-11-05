@@ -1,0 +1,61 @@
+# Install as .github/workflows/agents-tests.yml. Paths assume the agent tooling lives under
+# tools/ and ci/ of the adopting repository, as in this one.
+name: agents-tests
+
+# Tests of the agent tooling: the web reader, rule-bench, the transcript finders, the GitHub REST
+# helper, the CI sheriff's detector, and the scripts of skills that need no service package. One
+# job runs every suite because setting a job up costs about ten times the tests themselves. It
+# runs only on pull requests that change the tested scripts, their tests or the dependencies they
+# install. A push to master would re-test code its pull request already tested.
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/agents-tests.yml"
+      - "tools/**"
+      - "ci/**"
+      - "github/**"
+      - "skills/*/tests/**"
+      - "skills/*/scripts/**"
+      - ".python-version"
+      - "pyproject.toml"
+      - "uv.lock"
+
+concurrency:
+  group: agents-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      # Only what the suites import; the rest of the monorepo stays out of the checkout.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /skills/
+            /tools/
+            /ci/
+            /github/
+            /.python-version
+            /pyproject.toml
+            /uv.lock
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          enable-cache: true
+
+      # The root project's dev group carries the web reader's lxml and pypdf.
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Test the agent tooling
+        run: uv run --frozen --no-sync python -m pytest -q tools ci skills

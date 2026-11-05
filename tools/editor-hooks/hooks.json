@@ -1,0 +1,6 @@
+{
+  "_comment": "Example only: map it to your editor's or agent's hook config. The file name, schema and event name vary by agent; what matters is running the script after each response.",
+  "hooks": {
+    "after_response": [{ "command": "./tools/editor-hooks/sync-after-response.sh" }]
+  }
+}

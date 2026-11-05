@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use or adapt this material, please credit it as below."
+title: "Agentic engineering: rules, skills, routines and CI agents for working with coding agents"
+abstract: "An opinionated way to work with coding agents: engineering rules, agent skills for the delivery pipeline, design and research, scheduled routines, and CI agents."
+type: software
+authors:
+  - family-names: "Andre Chaaraoui"
+    given-names: "Alexandros"
+    alias: "alexandrosandre"
+repository-code: "https://github.com/alexandrosandre/agentic-engineering"
+license: CC-BY-4.0

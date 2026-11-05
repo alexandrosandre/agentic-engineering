@@ -1,0 +1,5 @@
+This is the repair job of `.github/workflows/cicd-sheriff.yml`. Read `skills/cicd-sheriff/SKILL.md` and follow the `cicd-sheriff` skill end to end for `<org>/<repo>` on `master`.
+
+The only monitored scope is the workflow badge inventory at the top of `README.md`. If every status is green, finish silently without posting to the team chat. If any status is red, verify the root cause, create or reuse a focused fix PR when the repository is responsible, and run `autoreview` until that PR is merge-ready or reaches a human-only blocker. Never merge the PR.
+
+Do not call the team chat directly. After intervention or a human-only blocker, write one concise chat-formatted handoff to the path in `$CICD_SHERIFF_HANDOFF` with the affected workflow and run links, verified root cause, action and resulting status, and the merge-ready PR link asking a human to approve and merge. The workflow posts that file to the engineering channel without exposing its chat token to you. If all statuses are green, or a race resolved without intervention, leave the handoff file absent.
